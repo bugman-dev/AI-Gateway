@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import json
 
-from fastapi.testclient import TestClient
-
 from app.errors.exceptions import (
     AuthenticationError,
     AuthorizationError,
@@ -13,6 +11,7 @@ from app.errors.exceptions import (
 )
 from app.errors.handlers import _status_for
 from app.main import create_app
+from fastapi.testclient import TestClient
 from tests.conftest import FakeBackend, make_settings
 
 

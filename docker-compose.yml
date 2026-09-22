@@ -1,12 +1,13 @@
 services:
   gateway:
     build: .
-    ports:
-      - "8080:8080"
+    # Share the host network so the gateway can call Ollama on 127.0.0.1:11434.
+    # host.docker.internal cannot reach a process bound only to loopback.
+    # Do not bind Ollama to 0.0.0.0 — it must stay LAN-inaccessible.
+    # Docker Desktop (Windows/Mac): Settings > Resources > Network > Enable host networking.
+    network_mode: host
     env_file:
       - .env
     environment:
-      OLLAMA_BASE_URL: http://host.docker.internal:11434
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
+      OLLAMA_BASE_URL: http://127.0.0.1:11434
     restart: unless-stopped

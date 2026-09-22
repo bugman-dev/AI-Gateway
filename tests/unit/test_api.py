@@ -2,10 +2,9 @@ from __future__ import annotations
 
 import json
 
-from fastapi.testclient import TestClient
-
 from app.errors.exceptions import BackendUnavailableError
 from app.main import create_app
+from fastapi.testclient import TestClient
 from tests.conftest import FakeBackend, make_settings
 
 AUTH = {"Authorization": "Bearer sk-local-dev"}
@@ -135,6 +134,7 @@ def test_honors_request_id_header() -> None:
     with client:
         response = client.get("/v1/models", headers={**AUTH, "X-Request-ID": "req-123"})
     assert response.headers["x-request-id"] == "req-123"
+    assert response.headers["x-request-timestamp"]
 
 
 def test_rejects_tools_over_http() -> None:
@@ -150,6 +150,22 @@ def test_rejects_tools_over_http() -> None:
             },
         )
     assert response.status_code == 400
+
+
+def test_rejects_unknown_fields_over_http() -> None:
+    client, _ = _client()
+    with client:
+        response = client.post(
+            "/v1/chat/completions",
+            headers=AUTH,
+            json={
+                "model": "fast",
+                "messages": [{"role": "user", "content": "hi"}],
+                "made_up_option": True,
+            },
+        )
+    assert response.status_code == 400
+    assert response.json()["error"]["type"] == "invalid_request_error"
 
 
 def test_structured_log_includes_identity_and_route() -> None:
@@ -182,6 +198,8 @@ def test_structured_log_includes_identity_and_route() -> None:
     assert payload["backend"] == "ollama"
     assert payload["backend_model"] == "qwen3:4b"
     assert payload["http_status"] == 200
+    assert payload["timestamp"]
+    assert "T" in payload["timestamp"]
     assert "sk-local-dev" not in records[-1]
 
 
@@ -202,4 +220,3 @@ def test_streaming_backend_down_returns_503() -> None:
         )
     assert response.status_code == 503
     assert response.json()["error"]["code"] == "backend_unavailable"
-

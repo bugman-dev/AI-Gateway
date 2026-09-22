@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from app.authorization.policies import ModelAccessPolicy
 from app.errors.exceptions import AuthorizationError
 from app.schemas.internal import Identity

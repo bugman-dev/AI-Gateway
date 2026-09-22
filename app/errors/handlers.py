@@ -16,7 +16,7 @@ from app.errors.exceptions import (
     InvalidRequestError,
     UnknownModelError,
 )
-from app.observability.request_context import get_request_id, set_error_class
+from app.observability.request_context import get_request_id, get_request_timestamp, set_error_class
 
 
 def _error_body(message: str, error_type: str, code: str | None) -> dict[str, object]:
@@ -28,6 +28,9 @@ def _response(status_code: int, message: str, error_type: str, code: str | None)
     request_id = get_request_id()
     if request_id:
         headers["X-Request-ID"] = request_id
+    request_timestamp = get_request_timestamp()
+    if request_timestamp:
+        headers["X-Request-Timestamp"] = request_timestamp
     return JSONResponse(
         status_code=status_code,
         content=_error_body(message, error_type, code),

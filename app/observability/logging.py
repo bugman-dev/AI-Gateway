@@ -4,7 +4,7 @@ import json
 import logging
 import sys
 import time
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from uuid import uuid4
 
 from starlette.datastructures import MutableHeaders
@@ -14,6 +14,7 @@ from app.observability.request_context import (
     reset_context,
     set_error_class,
     set_request_id,
+    set_request_timestamp,
     snapshot,
 )
 
@@ -33,7 +34,7 @@ def configure_logging() -> None:
 def log_request(*, http_status: int, latency_ms: float, error_class: str | None = None) -> None:
     context = snapshot()
     payload = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": context["timestamp"] or datetime.now(UTC).isoformat(),
         "request_id": context["request_id"],
         "identity_id": context["identity_id"],
         "logical_model": context["logical_model"],
@@ -71,7 +72,9 @@ class RequestContextMiddleware:
 
         headers = {key.decode("latin-1").lower(): value.decode("latin-1") for key, value in scope.get("headers", [])}
         request_id = normalize_request_id(headers.get("x-request-id"))
+        request_timestamp = datetime.now(UTC).isoformat()
         token = set_request_id(request_id)
+        set_request_timestamp(request_timestamp)
         started = time.perf_counter()
         status = 500
         error_class: str | None = None
@@ -82,6 +85,7 @@ class RequestContextMiddleware:
                 status = int(message["status"])
                 mutable = MutableHeaders(raw=message.setdefault("headers", []))
                 mutable["X-Request-ID"] = request_id
+                mutable["X-Request-Timestamp"] = request_timestamp
             await send(message)
 
         try:

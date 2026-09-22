@@ -23,8 +23,5 @@ async def list_models(
 ) -> ModelListResponse:
     created = int(time.time())
     return ModelListResponse(
-        data=[
-            ModelObject(id=name, created=created, owned_by="ai-gateway")
-            for name in settings.models
-        ]
+        data=[ModelObject(id=name, created=created, owned_by="ai-gateway") for name in settings.models]
     )

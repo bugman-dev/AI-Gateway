@@ -29,7 +29,7 @@ Set `GATEWAY_API_KEYS` in `.env`. Each key is an identity:
 
 Use `["*"]` to allow every configured logical model. Raw keys are never logged.
 
-Model routing lives in `config/models.yaml`. Override Ollama’s URL with `OLLAMA_BASE_URL` (Docker Compose sets `http://host.docker.internal:11434`).
+Model routing lives in `config/models.yaml`. Override Ollama’s URL with `OLLAMA_BASE_URL` (defaults to `http://127.0.0.1:11434`).
 
 ## Run locally
 
@@ -42,14 +42,18 @@ python -m uvicorn app.main:app --host 0.0.0.0 --port 8080
 
 ## Run with Docker
 
-Ollama remains a host service. The gateway is the only LAN-facing process.
+Ollama remains a host service bound to `127.0.0.1:11434`. The gateway is the only LAN-facing process (`0.0.0.0:8080`).
+
+Compose uses `network_mode: host` so the container can reach that loopback address. Do not bind Ollama to `0.0.0.0` — that would expose it on the LAN.
 
 ```bash
 cp .env.example .env
 docker compose up --build
 ```
 
-The container listens on `0.0.0.0:8080`. Ollama is not published by this compose file.
+On Docker Desktop (Windows/Mac), enable **Settings > Resources > Network > Enable host networking** so host mode can use the host loopback interface. On Linux this is native.
+
+Ollama is not published by this compose file.
 
 ## API
 
@@ -81,13 +85,15 @@ OpenAI Python client from another LAN workstation:
 from openai import OpenAI
 
 client = OpenAI(base_url="http://<gateway-host>:8080/v1", api_key="sk-local-dev")
-print(client.chat.completions.create(
-    model="fast",
-    messages=[{"role": "user", "content": "Hello"}],
-))
+print(
+    client.chat.completions.create(
+        model="fast",
+        messages=[{"role": "user", "content": "Hello"}],
+    )
+)
 ```
 
-`X-Request-ID` is returned on every response (send one to correlate). Structured JSON logs include request ID, identity id, logical model, backend, backend model, status, and latency — not prompts, responses, or API keys.
+`X-Request-ID` and `X-Request-Timestamp` are returned on every response. Structured JSON logs include that same request timestamp, request ID, identity id, logical model, backend, backend model, status, and latency — not prompts, responses, or API keys.
 
 ## Tests
 
@@ -96,3 +102,5 @@ python -m pytest
 ```
 
 Unit tests do not need Ollama. Integration tests run against a local Ollama instance and skip if it (or the required models) is unavailable.
+
+CI runs Ruff and unit tests on every pull request (`python -m pytest -m "not integration"`).

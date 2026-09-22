@@ -4,7 +4,6 @@ import json
 
 import httpx
 import pytest
-
 from app.backends.ollama import OllamaBackend
 from app.errors.exceptions import BackendError, BackendUnavailableError
 from app.schemas.internal import ChatMessage, ChatRequest

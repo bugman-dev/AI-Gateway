@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import pytest
-
 from app.errors.exceptions import UnknownModelError
 from app.routing.model_router import ModelRouter
 from tests.conftest import make_settings

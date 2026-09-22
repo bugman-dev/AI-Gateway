@@ -1,9 +1,8 @@
 from __future__ import annotations
 
 import pytest
-from pydantic import ValidationError
-
 from app.schemas.openai import ChatCompletionRequest
+from pydantic import ValidationError
 
 
 def test_valid_request() -> None:
@@ -63,5 +62,26 @@ def test_rejects_functions() -> None:
                 "model": "fast",
                 "messages": [{"role": "user", "content": "hello"}],
                 "functions": [{"name": "do"}],
+            }
+        )
+
+
+def test_rejects_unknown_request_field() -> None:
+    with pytest.raises(ValidationError, match="not_a_real_parameter"):
+        ChatCompletionRequest.model_validate(
+            {
+                "model": "fast",
+                "messages": [{"role": "user", "content": "hello"}],
+                "not_a_real_parameter": True,
+            }
+        )
+
+
+def test_rejects_unknown_message_field() -> None:
+    with pytest.raises(ValidationError, match="mystery"):
+        ChatCompletionRequest.model_validate(
+            {
+                "model": "fast",
+                "messages": [{"role": "user", "content": "hello", "mystery": "x"}],
             }
         )

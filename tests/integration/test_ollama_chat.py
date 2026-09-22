@@ -4,9 +4,8 @@ import os
 
 import httpx
 import pytest
-from fastapi.testclient import TestClient
-
 from app.main import create_app
+from fastapi.testclient import TestClient
 
 OLLAMA_URL = os.environ.get("OLLAMA_BASE_URL", "http://127.0.0.1:11434")
 pytestmark = pytest.mark.integration
@@ -20,9 +19,7 @@ def _ollama_ready() -> bool:
     if response.status_code != 200:
         return False
     names = [model.get("name", "") for model in response.json().get("models", [])]
-    return any(name.startswith("qwen3:4b") for name in names) and any(
-        name.startswith("qwen3:8b") for name in names
-    )
+    return any(name.startswith("qwen3:4b") for name in names) and any(name.startswith("qwen3:8b") for name in names)
 
 
 skip_without_ollama = pytest.mark.skipif(
